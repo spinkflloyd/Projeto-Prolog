@@ -190,8 +190,9 @@ exemplos :-
 % Faz uma pergunta por vez e usa recomendado/2 com as respostas.
 % ============================================================
 
-adotar :-
-    nl, writeln('=== Sistema de Indicacao de Animais para Adocao ==='),
+% Faz as perguntas e mostra os animais indicados
+buscar_animal :-
+    nl, writeln('--- Busca de animal ---'),
     writeln('Responda digitando o numero da opcao e apertando Enter.'),
 
     perguntar('1) Qual animal voce procura?',
@@ -219,8 +220,11 @@ adotar :-
     retractall(pessoa(visitante, _, _, _, _)),
     assertz(pessoa(visitante, Moradia, Criancas, Animais, Tempo)),
     resultado_adocao(Especie, Raca),
-    retractall(pessoa(visitante, _, _, _, _)),
+    retractall(pessoa(visitante, _, _, _, _)).
 
+% Repete a busca enquanto o usuário quiser
+adotar :-
+    buscar_animal,
     perguntar('Deseja fazer outra busca?',
               [sim-'Sim', nao-'Nao'], Outra),
     (   Outra == sim -> adotar ; writeln('Obrigado e boa adocao!') ).
@@ -289,3 +293,61 @@ mostrar_animais([A|Resto]) :-
     format('  - ~w: ~w, raca ~w, porte ~w, ~w, energia ~w~n',
            [A, Especie, Raca, Porte, Faixa, Energia]),
     mostrar_animais(Resto).
+
+% ============================================================
+% 8. MENU PRINCIPAL (?- iniciar.)
+% Tela inicial que reúne todas as funções do sistema.
+% ============================================================
+
+iniciar :-
+    nl, writeln('=== Sistema de Indicacao de Animais para Adocao ==='),
+    writeln('Digite o numero da opcao e aperte Enter.'),
+    menu.
+
+% Mostra o menu, executa a opção escolhida e volta ao menu
+menu :-
+    perguntar('MENU - O que voce deseja fazer?',
+              [buscar-'Buscar um animal para mim',
+               animais-'Ver os animais do abrigo',
+               pessoas-'Ver os perfis cadastrados',
+               prioritarios-'Ver animais com prioridade de adocao',
+               saude-'Ver animais que precisam de atencao de saude',
+               exemplos-'Rodar as consultas de exemplo',
+               sair-'Sair'], Opcao),
+    (   Opcao == sair
+    ->  writeln('Ate logo!')
+    ;   acao(Opcao),
+        pausar,
+        menu
+    ).
+
+% acao(+Opcao): executa cada item do menu
+acao(buscar) :-
+    buscar_animal.
+acao(animais) :-
+    nl, writeln('--- Animais do abrigo ---'),
+    findall(A, animal(A, _, _, _, _), Lista),
+    mostrar_animais(Lista).
+acao(pessoas) :-
+    nl, writeln('--- Perfis cadastrados ---'),
+    forall(pessoa(P, Moradia, Criancas, Animais, Tempo),
+           format('  - ~w: moradia ~w, criancas ~w, outros animais ~w, tempo ~w~n',
+                  [P, Moradia, Criancas, Animais, Tempo])).
+acao(prioritarios) :-
+    nl, writeln('--- Animais com prioridade de adocao (idosos) ---'),
+    findall(A, animal_prioritario(A), Lista),
+    mostrar_animais(Lista).
+acao(saude) :-
+    nl, writeln('--- Animais que precisam de atencao de saude ---'),
+    findall(A, precisa_atencao_saude(A), Lista),
+    (   Lista == []
+    ->  writeln('  Nenhum animal precisa de atencao no momento.')
+    ;   mostrar_animais(Lista)
+    ).
+acao(exemplos) :-
+    exemplos.
+
+% Espera o usuário apertar Enter antes de voltar ao menu
+pausar :-
+    nl, write('Pressione Enter para voltar ao menu...'),
+    read_line_to_string(user_input, _).

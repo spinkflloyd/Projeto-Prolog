@@ -19,15 +19,23 @@ Sistema em Prolog que recomenda animais para adoção de acordo com o perfil do 
 swipl adocao.pl
 ```
 
-### Modo interativo
+### Menu interativo
 
-O sistema faz uma pergunta por vez (animal, raça, moradia, crianças, outros animais e tempo disponível) e indica os animais compatíveis:
+Abre uma tela de menu com todas as funções (buscar animal, ver animais e perfis cadastrados, prioridades, saúde e exemplos):
 
 ```prolog
-?- adotar.
+?- iniciar.
 ```
 
-Responda digitando o número da opção e apertando Enter.
+Para abrir o menu direto ao iniciar o programa:
+
+```bash
+swipl -g iniciar adocao.pl
+```
+
+Na opção **Buscar um animal**, o sistema faz uma pergunta por vez (animal, raça, moradia, crianças, outros animais e tempo disponível) e indica os animais compatíveis. Responda digitando o número da opção e apertando Enter.
+
+Também é possível ir direto à busca com `?- adotar.`
 
 ## Exemplos de consultas
 
