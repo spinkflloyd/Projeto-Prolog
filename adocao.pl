@@ -1,13 +1,3 @@
-% ============================================================
-% SISTEMA DE INDICAÇÃO DE ANIMAIS PARA ADOÇÃO
-% Lógica para Ciências da Computação - Prolog (SWI-Prolog)
-% Autores: Nome 1 e Nome 2
-%
-% Uso: swipl adocao.pl
-%   ?- adotar.      % modo interativo (perguntas)
-%   ?- exemplos.    % exemplos de consultas
-% ============================================================
-
 :- encoding(utf8).
 
 % ============================================================
