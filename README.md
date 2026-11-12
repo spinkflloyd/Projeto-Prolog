@@ -1,6 +1,7 @@
 # 🐾 Indicação de Animais para Adoção 
 
 Projeto avaliativo de **Lógica para Ciências da Computação**
+
 **Autores:** Gustavo Souza e Luis Soares
 
 ## Descrição
