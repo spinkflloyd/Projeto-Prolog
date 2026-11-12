@@ -1,7 +1,7 @@
 # 🐾 Sistema de Indicação de Animais para Adoção (Prolog)
 
 Projeto avaliativo de **Lógica para Ciências da Computação** (UNIVASF).
-**Autores:** _Nome 1_ e _Nome 2_
+**Autores:** Gustavo Souza e Luis Soares
 
 ## Descrição
 
