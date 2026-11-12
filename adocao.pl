@@ -1,25 +1,20 @@
 % ============================================================
 % SISTEMA DE INDICAÇÃO DE ANIMAIS PARA ADOÇÃO
-% Disciplina: Lógica para Ciências da Computação
-% Linguagem : Prolog (SWI-Prolog)
-% Autores   : Nome 1 e Nome 2
+% Lógica para Ciências da Computação - Prolog (SWI-Prolog)
+% Autores: Nome 1 e Nome 2
 %
-% Como usar:
-%   swipl adocao.pl
-%   ?- recomendado(A, ana).
-%   ?- exemplos.        % executa todos os exemplos de consulta
+% Uso: swipl adocao.pl
+%   ?- adotar.      % modo interativo (perguntas)
+%   ?- exemplos.    % exemplos de consultas
 % ============================================================
 
 :- encoding(utf8).
 
 % ============================================================
-% 1. BASE DE CONHECIMENTO - ANIMAIS
+% 1. FATOS: ANIMAIS
 % ============================================================
 
 % animal(Nome, Especie, Porte, FaixaEtaria, Energia)
-%   Porte       : pequeno | medio | grande
-%   FaixaEtaria : filhote | adulto | idoso
-%   Energia     : baixa | media | alta
 animal(rex,   cachorro, grande,  adulto,  alta).
 animal(mel,   cachorro, medio,   filhote, media).
 animal(thor,  cachorro, pequeno, idoso,   baixa).
@@ -29,7 +24,7 @@ animal(bob,   cachorro, medio,   adulto,  alta).
 animal(nina,  coelho,   pequeno, adulto,  baixa).
 animal(simba, gato,     pequeno, idoso,   baixa).
 
-% sociavel_criancas(Nome): o animal convive bem com crianças
+% Convive bem com crianças
 sociavel_criancas(rex).
 sociavel_criancas(mel).
 sociavel_criancas(luna).
@@ -37,14 +32,14 @@ sociavel_criancas(mimi).
 sociavel_criancas(bob).
 sociavel_criancas(simba).
 
-% sociavel_animais(Nome): o animal convive bem com outros animais
+% Convive bem com outros animais
 sociavel_animais(mel).
 sociavel_animais(thor).
 sociavel_animais(luna).
 sociavel_animais(bob).
 sociavel_animais(simba).
 
-% vacinado(Nome): vacinação em dia (bob ainda não está vacinado)
+% Vacinação em dia (bob não está vacinado)
 vacinado(rex).
 vacinado(mel).
 vacinado(thor).
@@ -53,47 +48,53 @@ vacinado(mimi).
 vacinado(nina).
 vacinado(simba).
 
+% raca(Nome, Raca): srd = sem raça definida
+raca(rex,   pastor_alemao).
+raca(mel,   labrador).
+raca(thor,  poodle).
+raca(luna,  siames).
+raca(mimi,  srd).
+raca(bob,   srd).
+raca(nina,  mini_lop).
+raca(simba, persa).
+
 % ============================================================
-% 2. BASE DE CONHECIMENTO - INTERESSADOS
+% 2. FATOS: INTERESSADOS
 % ============================================================
 
+% Dinâmico: o modo interativo cadastra o "visitante" aqui
+:- dynamic pessoa/5.
+
 % pessoa(Nome, Moradia, TemCriancas, TemAnimais, Tempo)
-%   Moradia : apartamento | casa_pequena | casa_quintal
-%   Tempo   : pouco | medio | muito
 pessoa(ana,   apartamento,  nao, nao, pouco).
 pessoa(bruno, casa_quintal, sim, sim, muito).
 pessoa(carla, casa_pequena, sim, nao, medio).
 
 % ============================================================
-% 3. FATOS AUXILIARES (escalas numéricas para comparação)
+% 3. ESCALAS AUXILIARES (para comparar com >=)
 % ============================================================
 
-% Espaço que cada porte de animal exige
 porte_exige(pequeno, 1).
 porte_exige(medio,   2).
 porte_exige(grande,  3).
 
-% Espaço que cada tipo de moradia oferece
 espaco_nivel(apartamento,  1).
 espaco_nivel(casa_pequena, 2).
 espaco_nivel(casa_quintal, 3).
 
-% Atenção/exercício que cada nível de energia demanda
 energia_nivel(baixa, 1).
 energia_nivel(media, 2).
 energia_nivel(alta,  3).
 
-% Tempo que cada disponibilidade representa
 tempo_nivel(pouco, 1).
 tempo_nivel(medio, 2).
 tempo_nivel(muito, 3).
 
 % ============================================================
-% 4. REGRAS LÓGICAS
+% 4. REGRAS
 % ============================================================
 
-% Regra 1: o animal cabe na moradia da pessoa?
-% O espaço da moradia deve ser maior ou igual ao exigido pelo porte.
+% 1. O animal cabe na moradia?
 cabe_no_espaco(A, P) :-
     animal(A, _, Porte, _, _),
     pessoa(P, Moradia, _, _, _),
@@ -101,7 +102,7 @@ cabe_no_espaco(A, P) :-
     espaco_nivel(Moradia, NivelMoradia),
     NivelMoradia >= NivelAnimal.
 
-% Regra 2: a pessoa tem tempo suficiente para a energia do animal?
+% 2. A pessoa tem tempo para a energia do animal?
 tempo_adequado(A, P) :-
     animal(A, _, _, _, Energia),
     pessoa(P, _, _, _, Tempo),
@@ -109,26 +110,21 @@ tempo_adequado(A, P) :-
     tempo_nivel(Tempo, NivelTempo),
     NivelTempo >= NivelEnergia.
 
-% Regra 3: compatibilidade com crianças.
-% Sem crianças em casa, qualquer animal serve; com crianças,
-% o animal precisa ser sociável com elas.
+% 3. Com crianças em casa, o animal precisa ser sociável com elas
 compativel_criancas(_, P) :-
     pessoa(P, _, nao, _, _).
 compativel_criancas(A, P) :-
     pessoa(P, _, sim, _, _),
     sociavel_criancas(A).
 
-% Regra 4: compatibilidade com outros animais.
-% Sem animais em casa, qualquer animal serve; com animais,
-% o animal precisa conviver bem com eles.
+% 4. Com outros animais em casa, o animal precisa conviver bem com eles
 compativel_animais(_, P) :-
     pessoa(P, _, _, nao, _).
 compativel_animais(A, P) :-
     pessoa(P, _, _, sim, _),
     sociavel_animais(A).
 
-% Regra 5: recomendação final.
-% Combina todas as regras anteriores e exige vacinação em dia.
+% 5. Recomendação: junta as regras anteriores e exige vacinação
 recomendado(A, P) :-
     cabe_no_espaco(A, P),
     tempo_adequado(A, P),
@@ -136,33 +132,31 @@ recomendado(A, P) :-
     compativel_animais(A, P),
     vacinado(A).
 
-% Regra 6: recomendação filtrada por espécie.
+% 6. Recomendação filtrada por espécie
 recomendado_especie(A, P, Especie) :-
     recomendado(A, P),
     animal(A, Especie, _, _, _).
 
-% Regra 7: animais idosos têm prioridade de adoção.
+% 7. Animais idosos têm prioridade
 animal_prioritario(A) :-
     animal(A, _, _, idoso, _).
 
-% Regra 8: animais não vacinados precisam de atenção de saúde.
-% Usa negação por falha (\+).
+% 8. Animais não vacinados precisam de atenção (negação por falha)
 precisa_atencao_saude(A) :-
     animal(A, _, _, _, _),
     \+ vacinado(A).
 
 % ============================================================
-% 5. PREDICADOS AUXILIARES DE CONSULTA
+% 5. CONSULTA AUXILIAR
 % ============================================================
 
-% listar_recomendacoes(+Pessoa): imprime todos os animais
-% recomendados para a pessoa informada.
+% Lista de uma vez os animais recomendados para uma pessoa
 listar_recomendacoes(P) :-
     findall(A, recomendado(A, P), Lista),
     format('Recomendados para ~w: ~w~n', [P, Lista]).
 
 % ============================================================
-% 6. EXEMPLOS DE CONSULTAS (execute com ?- exemplos.)
+% 6. EXEMPLOS DE CONSULTAS (?- exemplos.)
 % ============================================================
 
 exemplos :-
@@ -200,3 +194,108 @@ exemplos :-
     ->  writeln('   Resultado: ninguém')
     ;   format('   Resultado: ~w~n', [L7])
     ), nl.
+
+% ============================================================
+% 7. MODO INTERATIVO (?- adotar.)
+% Faz uma pergunta por vez e usa recomendado/2 com as respostas.
+% ============================================================
+
+adotar :-
+    nl, writeln('=== Sistema de Indicacao de Animais para Adocao ==='),
+    writeln('Responda digitando o numero da opcao e apertando Enter.'),
+
+    perguntar('1) Qual animal voce procura?',
+              [cachorro-'Cachorro', gato-'Gato', coelho-'Coelho',
+               qualquer-'Qualquer um'], Especie),
+
+    opcoes_raca(Especie, OpcoesRaca),
+    perguntar('2) Tem preferencia de raca?', OpcoesRaca, Raca),
+
+    perguntar('3) Onde voce mora?',
+              [apartamento-'Apartamento',
+               casa_pequena-'Casa pequena (sem quintal)',
+               casa_quintal-'Casa com quintal'], Moradia),
+
+    perguntar('4) Mora com criancas?',
+              [sim-'Sim', nao-'Nao'], Criancas),
+
+    perguntar('5) Mora com outros animais?',
+              [sim-'Sim', nao-'Nao'], Animais),
+
+    perguntar('6) Quanto tempo livre voce tem para o animal?',
+              [pouco-'Pouco', medio-'Medio', muito-'Muito'], Tempo),
+
+    % Cadastra o visitante, consulta as regras e remove o cadastro
+    retractall(pessoa(visitante, _, _, _, _)),
+    assertz(pessoa(visitante, Moradia, Criancas, Animais, Tempo)),
+    resultado_adocao(Especie, Raca),
+    retractall(pessoa(visitante, _, _, _, _)),
+
+    perguntar('Deseja fazer outra busca?',
+              [sim-'Sim', nao-'Nao'], Outra),
+    (   Outra == sim -> adotar ; writeln('Obrigado e boa adocao!') ).
+
+% Mostra as opções (Valor-Rotulo), lê o número e repete se for inválido
+perguntar(Pergunta, Opcoes, Escolha) :-
+    nl, writeln(Pergunta),
+    mostrar_opcoes(Opcoes, 1),
+    write('> '),
+    read_line_to_string(user_input, Entrada),
+    (   Entrada == end_of_file
+    ->  writeln('Entrada encerrada.'), halt
+    ;   number_string(N, Entrada),
+        integer(N), N >= 1,
+        nth1(N, Opcoes, Escolha-_)
+    ->  true
+    ;   writeln('Opcao invalida, tente novamente.'),
+        perguntar(Pergunta, Opcoes, Escolha)
+    ).
+
+% Imprime a lista numerada de opções
+mostrar_opcoes([], _).
+mostrar_opcoes([_-Rotulo|Resto], N) :-
+    format('  ~w) ~w~n', [N, Rotulo]),
+    N1 is N + 1,
+    mostrar_opcoes(Resto, N1).
+
+% Menu de raças da espécie escolhida (ou de todas)
+opcoes_raca(Especie, [qualquer-'Sem preferencia'|Racas]) :-
+    findall(R-R,
+            (   animal(A, E, _, _, _),
+                ( Especie == qualquer ; E == Especie ),
+                raca(A, R)
+            ),
+            Pares),
+    sort(Pares, Racas).
+
+% O animal atende à espécie e raça pedidas? (qualquer = sem restrição)
+filtro_animal(A, Especie, Raca) :-
+    ( Especie == qualquer ; animal(A, Especie, _, _, _) ),
+    ( Raca == qualquer ; raca(A, Raca) ).
+
+% Mostra os animais indicados; se o filtro não achar nada,
+% sugere os demais animais compatíveis com o perfil
+resultado_adocao(Especie, Raca) :-
+    nl, writeln('--- Resultado ---'),
+    findall(A,
+            ( recomendado(A, visitante), filtro_animal(A, Especie, Raca) ),
+            Lista),
+    findall(A, recomendado(A, visitante), Compativeis),
+    (   Lista \== []
+    ->  writeln('Animais indicados para voce:'),
+        mostrar_animais(Lista)
+    ;   Compativeis \== []
+    ->  writeln('Nenhum animal com essa especie/raca e compativel com seu perfil.'),
+        writeln('Mas estes outros animais combinam com voce:'),
+        mostrar_animais(Compativeis)
+    ;   writeln('Nenhum animal do abrigo e compativel com o seu perfil no momento.')
+    ).
+
+% Imprime os dados de cada animal
+mostrar_animais([]).
+mostrar_animais([A|Resto]) :-
+    animal(A, Especie, Porte, Faixa, Energia),
+    raca(A, Raca),
+    format('  - ~w: ~w, raca ~w, porte ~w, ~w, energia ~w~n',
+           [A, Especie, Raca, Porte, Faixa, Energia]),
+    mostrar_animais(Resto).
