@@ -6,7 +6,7 @@ Projeto avaliativo de **Lógica para Ciências da Computação**
 
 ## Descrição
 
-Sistema em Prolog que recomenda animais para adoção de acordo com o perfil do interessado (espécie, raça, moradia, crianças e outros animais em casa e tempo disponível), usando fatos e regras lógicas.
+Sistema em Prolog que recomenda animais para adoção de acordo com o perfil do interessado (espécie, raça, moradia, crianças e outros animais em casa, tempo disponível, alergia e experiência), usando fatos e regras lógicas. Também explica por que um animal não foi recomendado.
 
 ## Arquivos
 
@@ -21,7 +21,7 @@ swipl adocao.pl
 
 ### Menu interativo
 
-Abre uma tela de menu com todas as funções (buscar animal, ver animais e perfis cadastrados, prioridades, saúde e exemplos):
+Abre uma tela de menu com todas as funções (buscar animal, ver animais e perfis, prioridades, saúde, explicações e exemplos):
 
 ```prolog
 ?- iniciar.
@@ -33,7 +33,7 @@ Para abrir o menu direto ao iniciar o programa:
 swipl -g iniciar adocao.pl
 ```
 
-Na opção **Buscar um animal**, o sistema faz uma pergunta por vez (animal, raça, moradia, crianças, outros animais e tempo disponível) e indica os animais compatíveis. Responda digitando o número da opção e apertando Enter.
+Na opção **Buscar um animal**, o sistema faz uma pergunta por vez (animal, raça, moradia, crianças, outros animais, tempo disponível, alergia e experiência) e indica os animais compatíveis. Responda digitando o número da opção e apertando Enter.
 
 Também é possível ir direto à busca com `?- adotar.`
 
@@ -54,6 +54,14 @@ A = thor ; A = simba.
 
 ?- precisa_atencao_saude(A).
 A = bob.
+
+?- recomendado(A, diego).
+A = thor.
+
+?- explicar(rex, ana).
+rex NAO e recomendado para ana pelos motivos:
+  - porte grande nao cabe em apartamento
+  - energia alta exige mais tempo livre do que pouco
 ```
 
 O predicado `exemplos.` executa todas as consultas de exemplo de uma vez.

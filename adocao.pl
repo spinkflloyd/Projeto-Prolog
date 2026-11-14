@@ -48,17 +48,30 @@ raca(bob,   srd).
 raca(nina,  mini_lop).
 raca(simba, persa).
 
+% Animais hipoalergênicos (indicados para pessoas alérgicas)
+hipoalergenico(thor).
+hipoalergenico(luna).
+
 % ============================================================
 % 2. FATOS: INTERESSADOS
 % ============================================================
 
-% Dinâmico: o modo interativo cadastra o "visitante" aqui
+% Dinâmicos: o modo interativo cadastra o "visitante" aqui
 :- dynamic pessoa/5.
+:- dynamic alergico/1.
+:- dynamic iniciante/1.
 
 % pessoa(Nome, Moradia, TemCriancas, TemAnimais, Tempo)
 pessoa(ana,   apartamento,  nao, nao, pouco).
 pessoa(bruno, casa_quintal, sim, sim, muito).
 pessoa(carla, casa_pequena, sim, nao, medio).
+pessoa(diego, apartamento,  nao, nao, pouco).
+
+% alergico(Pessoa): tem alergia a pelos
+alergico(diego).
+
+% iniciante(Pessoa): nunca teve animais
+iniciante(diego).
 
 % ============================================================
 % 3. ESCALAS AUXILIARES (para comparar com >=)
@@ -114,26 +127,94 @@ compativel_animais(A, P) :-
     pessoa(P, _, _, sim, _),
     sociavel_animais(A).
 
-% 5. Recomendação: junta as regras anteriores e exige vacinação
+% 5. Pessoa alérgica só pode receber animal hipoalergênico
+alergia_ok(_, P) :-
+    pessoa(P, _, _, _, _),
+    \+ alergico(P).
+alergia_ok(A, P) :-
+    alergico(P),
+    hipoalergenico(A).
+
+% 6. Iniciante não recebe animal de energia alta
+experiencia_adequada(_, P) :-
+    pessoa(P, _, _, _, _),
+    \+ iniciante(P).
+experiencia_adequada(A, P) :-
+    iniciante(P),
+    animal(A, _, _, _, Energia),
+    Energia \== alta.
+
+% 7. Recomendação: junta as regras anteriores e exige vacinação
 recomendado(A, P) :-
     cabe_no_espaco(A, P),
     tempo_adequado(A, P),
     compativel_criancas(A, P),
     compativel_animais(A, P),
+    alergia_ok(A, P),
+    experiencia_adequada(A, P),
     vacinado(A).
 
-% 6. Recomendação filtrada por espécie
+% 8. Recomendação filtrada por espécie
 recomendado_especie(A, P, Especie) :-
     recomendado(A, P),
     animal(A, Especie, _, _, _).
 
-% 7. Animais idosos têm prioridade
+% 9. Animais idosos têm prioridade
 animal_prioritario(A) :-
     animal(A, _, _, idoso, _).
 
-% 8. Animais não vacinados precisam de atenção (negação por falha)
+% 10. Animais não vacinados precisam de atenção (negação por falha)
 precisa_atencao_saude(A) :-
     animal(A, _, _, _, _),
+    \+ vacinado(A).
+
+% 11. Dois animais que podem ser adotados juntos pela mesma pessoa
+dupla_compativel(A1, A2, P) :-
+    recomendado(A1, P),
+    recomendado(A2, P),
+    A1 @< A2,
+    sociavel_animais(A1),
+    sociavel_animais(A2).
+
+% ============================================================
+% 4.1 EXPLICAÇÃO: por que um animal não foi recomendado?
+% ============================================================
+
+% 12. Lista os motivos da recusa (ou confirma a recomendação)
+explicar(A, P) :-
+    (   \+ animal(A, _, _, _, _)
+    ->  format('Animal ~w nao existe na base.~n', [A])
+    ;   \+ pessoa(P, _, _, _, _)
+    ->  format('Pessoa ~w nao esta cadastrada.~n', [P])
+    ;   findall(M, motivo_recusa(A, P, M), Motivos),
+        (   Motivos == []
+        ->  format('~w e recomendado para ~w: atende a todos os criterios.~n', [A, P])
+        ;   format('~w NAO e recomendado para ~w pelos motivos:~n', [A, P]),
+            forall(member(M, Motivos), format('  - ~w~n', [M]))
+        )
+    ).
+
+% motivo_recusa(+A, +P, -Motivo): um motivo para cada condição
+% de recomendado/2 que falha
+motivo_recusa(A, P, M) :-
+    \+ cabe_no_espaco(A, P),
+    animal(A, _, Porte, _, _),
+    pessoa(P, Moradia, _, _, _),
+    format(atom(M), 'porte ~w nao cabe em ~w', [Porte, Moradia]).
+motivo_recusa(A, P, M) :-
+    \+ tempo_adequado(A, P),
+    animal(A, _, _, _, Energia),
+    pessoa(P, _, _, _, Tempo),
+    format(atom(M), 'energia ~w exige mais tempo livre do que ~w', [Energia, Tempo]).
+motivo_recusa(A, P, 'nao convive bem com criancas') :-
+    \+ compativel_criancas(A, P).
+motivo_recusa(A, P, 'nao convive bem com outros animais') :-
+    \+ compativel_animais(A, P).
+motivo_recusa(A, P, 'a pessoa e alergica e o animal nao e hipoalergenico') :-
+    \+ alergia_ok(A, P).
+motivo_recusa(A, P, 'animal de energia alta nao e indicado para iniciante') :-
+    \+ experiencia_adequada(A, P).
+motivo_recusa(A, _, 'nao esta vacinado') :-
     \+ vacinado(A).
 
 % ============================================================
@@ -183,7 +264,14 @@ exemplos :-
     (   L7 == []
     ->  writeln('   Resultado: ninguém')
     ;   format('   Resultado: ~w~n', [L7])
-    ), nl.
+    ), nl,
+
+    writeln('8. Quais animais são recomendados para o Diego (alérgico e iniciante)?'),
+    findall(A8, recomendado(A8, diego), L8),
+    format('   Resultado: ~w~n~n', [L8]),
+
+    writeln('9. Por que o Rex não é recomendado para a Ana?'),
+    explicar(rex, ana), nl.
 
 % ============================================================
 % 7. MODO INTERATIVO (?- adotar.)
@@ -216,11 +304,25 @@ buscar_animal :-
     perguntar('6) Quanto tempo livre voce tem para o animal?',
               [pouco-'Pouco', medio-'Medio', muito-'Muito'], Tempo),
 
+    perguntar('7) Alguem em casa tem alergia a pelos?',
+              [sim-'Sim', nao-'Nao'], Alergia),
+
+    perguntar('8) Voce ja teve animais antes?',
+              [sim-'Sim, ja tive', nao-'Nao, seria o primeiro'], Experiencia),
+
     % Cadastra o visitante, consulta as regras e remove o cadastro
-    retractall(pessoa(visitante, _, _, _, _)),
+    limpar_visitante,
     assertz(pessoa(visitante, Moradia, Criancas, Animais, Tempo)),
+    (   Alergia == sim -> assertz(alergico(visitante)) ; true ),
+    (   Experiencia == nao -> assertz(iniciante(visitante)) ; true ),
     resultado_adocao(Especie, Raca),
-    retractall(pessoa(visitante, _, _, _, _)).
+    limpar_visitante.
+
+% Remove todos os dados temporários do visitante
+limpar_visitante :-
+    retractall(pessoa(visitante, _, _, _, _)),
+    retractall(alergico(visitante)),
+    retractall(iniciante(visitante)).
 
 % Repete a busca enquanto o usuário quiser
 adotar :-
@@ -312,6 +414,7 @@ menu :-
                pessoas-'Ver os perfis cadastrados',
                prioritarios-'Ver animais com prioridade de adocao',
                saude-'Ver animais que precisam de atencao de saude',
+               explicar-'Entender por que um animal nao foi recomendado',
                exemplos-'Rodar as consultas de exemplo',
                sair-'Sair'], Opcao),
     (   Opcao == sair
@@ -344,6 +447,12 @@ acao(saude) :-
     ->  writeln('  Nenhum animal precisa de atencao no momento.')
     ;   mostrar_animais(Lista)
     ).
+acao(explicar) :-
+    findall(P-P, pessoa(P, _, _, _, _), OpcoesPessoa),
+    perguntar('Para qual pessoa?', OpcoesPessoa, Pessoa),
+    findall(A-A, animal(A, _, _, _, _), OpcoesAnimal),
+    perguntar('Sobre qual animal?', OpcoesAnimal, Animal),
+    nl, explicar(Animal, Pessoa).
 acao(exemplos) :-
     exemplos.
 
